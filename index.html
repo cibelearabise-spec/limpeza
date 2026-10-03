@@ -45,6 +45,10 @@ nav button{border:0;background:none;color:#cbbba8;font:inherit;font-size:13px;pa
 nav button.on{background:#f4ede3;color:var(--ink)}
 .pill{position:fixed;bottom:calc(78px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#17120f;border:1px solid var(--line);padding:12px 24px;border-radius:99px;font-size:14px}
 .hide{display:none}
+.back{border:1px solid var(--line);background:var(--glass);color:#f4ede3;border-radius:99px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer;margin-bottom:14px}
+.hero{height:210px;border-radius:30px;overflow:hidden;background:linear-gradient(135deg,#7b5b3f,#2a1d14);margin-bottom:16px}.hero img,.prod img{width:100%;height:100%;object-fit:cover;display:block}
+.blk{background:var(--glass);border:1px solid var(--line);border-radius:24px;padding:16px;margin-bottom:12px}.blk h4{font-weight:500;margin-bottom:6px}.blk p{font-size:14px;color:#e2d6c5;line-height:1.6}
+.prod{height:200px;border-radius:18px;overflow:hidden;margin-bottom:12px;background:#e9e1d5}.prod img{object-fit:contain}
 </style>
 </head>
 <body>
@@ -60,11 +64,13 @@ nav button.on{background:#f4ede3;color:var(--ink)}
       <button class="btn" id="pay">Confirmar consulta</button>
       <p class="note">Ao confirmar, seu horário fica reservado.</p>
     </div>
-    <p class="lbl">Procedimento</p><div class="tiles" id="svc"></div>
+    <p class="lbl">Procedimentos · toque para saber mais</p><div class="tiles" id="svc"></div>
     <p class="lbl">Dia</p><div class="chips" id="day"></div>
     <p class="lbl">Horário</p><div class="chips" id="hr"></div>
-    <p class="lbl">Profissional</p><div class="chips" id="doc"></div>
+    
   </section>
+
+  <section id="detalhe" class="hide"></section>
 
   <section id="rotina" class="hide">
     <h2>Rotina de hoje</h2><p class="lead">Pequenos hábitos, grande prevenção.</p>
@@ -85,9 +91,37 @@ nav button.on{background:#f4ede3;color:var(--ink)}
 <script>
 const $=s=>document.querySelector(s);
 const SVC=[["Limpeza preventiva","limpeza.jpg"],["Orientação de escovação","escova.jpg"],["Kit de higiene","kit.jpg"],["Verniz de flúor","verniz.jpg"]];
-const DOCS=["Dra. Emily Taylor","Dr. Lucas Moreira","Dra. Camila Rocha"];
+const DOCS=["Dra. Emily Taylor"];
 const DAYS=["Seg 12.11","Ter 13.11","Qua 14.11","Qui 15.11"];
 const HRS=["09:00–09:45","10:30–11:15","14:00–14:45","16:00–16:45"];
+const SLUG=["limpeza","escova","kit","verniz"];
+const INFO={
+limpeza:{t:"Limpeza preventiva",img:"limpeza.jpg",b:[
+["O que é","A profilaxia é a remoção profissional de placa bacteriana e tártaro (cálculo) acumulados nos dentes e na linha da gengiva, incluindo os pontos que a escovação diária não alcança."],
+["Por que é importante","O tártaro só sai com instrumentos do consultório. Retirá-lo regularmente previne cáries, gengivite, mau hálito e evita que a inflamação evolua para doença periodontal."],
+["Como é feita","Avaliação rápida, remoção do tártaro com ultrassom e curetas, polimento e orientações de higiene. Em geral leva de 40 a 60 minutos e é indolor. O ideal é repetir a cada 6 meses, ou conforme indicação da dentista."]]},
+escova:{t:"Orientação de escovação",img:"escova.jpg",b:[
+["O que é","Uma consulta para ensinar a técnica de escovação ideal para a sua boca, com revelação de placa, escolha da escova e do creme dental e demonstração do uso do fio dental."],
+["Por que é importante","A maioria das pessoas escova rápido ou com força demais, o que deixa placa nos dentes e pode causar recessão gengival. A técnica correta é a base de toda a prevenção."],
+["Como funciona","A dentista mostra onde você mais acumula placa, ensina os movimentos certos e define uma rotina simples: escovar por 2 minutos, 3 vezes ao dia, e usar fio dental diariamente."]]},
+kit:{t:"Kit de higiene",img:"kit.jpg",b:[
+["O que é","Conjunto de itens indicados pela dentista para manter a saúde bucal em casa: escova adequada, creme dental com flúor, fio dental e, quando necessário, escovas interdentais e enxaguante."],
+["Por que é importante","Os cuidados do dia a dia fazem a maior parte do trabalho preventivo. Usar os produtos certos para o seu caso aumenta a eficácia da escovação e protege o resultado da limpeza feita no consultório."],
+["Como usar","Siga a rotina indicada: escovar após as refeições, passar o fio dental ao menos uma vez ao dia e trocar a escova a cada 3 meses, ou antes se as cerdas estiverem abertas."]]},
+verniz:{t:"Verniz de flúor",img:"verniz.jpg",b:[
+["O que é","A aplicação tópica de flúor sobre os dentes para fortalecer o esmalte, ajudar a reverter lesões iniciais de cárie (remineralização) e reduzir a sensibilidade."],
+["Por que é importante","O flúor torna o esmalte mais resistente aos ácidos produzidos pelas bactérias. É indicado para crianças e adultos, especialmente em quem tem risco maior de cárie, sensibilidade ou usa aparelho ortodôntico."],
+["Como é feito","Os dentes são limpos e secos, e o produto é aplicado com pincel em poucos minutos. Depois, a dentista passa orientações simples sobre alimentação e higiene nas horas seguintes."]],
+prod:["Sobre o produto","O Clinpro™ Clear Tratamento de Flúor é um tratamento à base de flúor, livre de colofônia, que é aplicado para proteger e remineralizar o esmalte dental. Possui uma tecnologia avançada de liberação de flúor, à base de água, criando uma cobertura transparente, suave e eficaz quando aplicado nos dentes. Essa tecnologia permite a liberação eficiente de flúor, cálcio e fosfato com um tempo de contato mínimo, de apenas 15 minutos, tornando mais fácil para os pacientes."]}};
+function route(){
+  const h=location.hash.replace("#/",""),d=INFO[h],det=$("#detalhe");
+  if(!d){det.classList.add("hide");const t=document.querySelector("nav .on").dataset.t;["agenda","rotina","dicas"].forEach(x=>$("#"+x).classList.toggle("hide",x!==t));return}
+  ["agenda","rotina","dicas"].forEach(x=>$("#"+x).classList.add("hide"));
+  const prod=d.prod?`<div class="blk"><h4>${d.prod[0]}</h4><div class="prod"><img src="clin.jpg" alt="Clinpro Clear" onerror="this.parentNode.remove()"></div><p>${d.prod[1]}</p></div>`:"";
+  det.innerHTML=`<button class="back" onclick="location.hash='#/'">← Voltar</button><div class="hero"><img src="${d.img}" alt="${d.t}" onerror="this.remove()"></div><h2>${d.t}</h2><p class="lead">Entenda o procedimento e sua importância</p>`+prod+d.b.map(x=>`<div class="blk"><h4>${x[0]}</h4><p>${x[1]}</p></div>`).join("")+`<button class="btn" id="go">Agendar este procedimento</button>`;
+  det.classList.remove("hide");scrollTo(0,0);
+  $("#go").onclick=()=>{S.svc=SLUG.indexOf(h);S.confirmed=false;save();document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x.dataset.t==="agenda"));location.hash="#/";renderAgenda()};
+}
 const TASKS=["Escovar ao acordar","Fio dental","Enxaguante bucal","Escovar antes de dormir"];
 const TIPS=[["Escovação","Escove por 2 minutos","Use movimentos curtos e suaves em ângulo de 45° em direção à gengiva."],["Escovação","Troque a escova","Substitua a cada 3 meses ou quando as cerdas estiverem abertas."],["Alimentação","Reduza açúcar entre refeições","O contato frequente com açúcar mantém o pH baixo e favorece cáries."],["Gengiva","Sangramento merece atenção","Gengiva que sangra ao usar fio dental pode indicar inflamação. Agende uma avaliação."],["Gengiva","Fio dental todos os dias","Remove placa onde a escova não alcança, prevenindo gengivite."],["Alimentação","Beba água após comer","Ajuda a neutralizar ácidos e a limpar resíduos."]];
 let S={svc:0,day:0,hr:0,doc:0,confirmed:false,tasks:{},hist:{},fav:[]};
@@ -95,11 +129,11 @@ const today=new Date().toISOString().slice(0,10);
 try{Object.assign(S,JSON.parse(localStorage.getItem("s360")||"{}"))}catch(e){}
 const save=()=>{try{localStorage.setItem("s360",JSON.stringify(S))}catch(e){}};
 function chips(id,arr,key,fmt){const el=$(id);el.innerHTML="";arr.forEach((a,i)=>{const b=document.createElement("button");b.className="chip"+(S[key]===i?" on":"");b.textContent=fmt?fmt(a):a;b.onclick=()=>{S[key]=i;S.confirmed=false;save();renderAgenda()};el.append(b)})}
-function tiles(){const el=$("#svc");el.innerHTML="";SVC.forEach((a,i)=>{const b=document.createElement("button");b.className="tile"+(S.svc===i?" on":"");b.innerHTML=`<img src="${a[1]}" alt="${a[0]}" onerror="this.remove()"><span>${a[0]}</span>`;b.onclick=()=>{S.svc=i;S.confirmed=false;save();renderAgenda()};el.append(b)})}
+function tiles(){const el=$("#svc");el.innerHTML="";SVC.forEach((a,i)=>{const b=document.createElement("button");b.className="tile"+(S.svc===i?" on":"");b.innerHTML=`<img src="${a[1]}" alt="${a[0]}" onerror="this.remove()"><span>${a[0]}</span>`;b.onclick=()=>{location.hash="#/"+SLUG[i]};el.append(b)})}
 function renderAgenda(){
-  tiles();chips("#day",DAYS,"day");chips("#hr",HRS,"hr");chips("#doc",DOCS,"doc");
+  tiles();chips("#day",DAYS,"day");chips("#hr",HRS,"hr");
   $("#cSvc").textContent=SVC[S.svc][0];$("#cImg").src=SVC[S.svc][1];$("#cDate").textContent=DAYS[S.day];$("#cTime").textContent=HRS[S.hr];
-  $("#cDoc").textContent=DOCS[S.doc]+" · Clínica S360°";
+  $("#cDoc").textContent=DOCS[0]+" · Clínica S360°";
   const st=$("#status");st.textContent=S.confirmed?"Confirmado":"Não confirmado";st.className="tag"+(S.confirmed?" ok":"");
   $("#pay").textContent=S.confirmed?"Consulta confirmada ✓":"Confirmar consulta";
 }
@@ -124,10 +158,10 @@ function renderTips(){
     h.onclick=()=>{S.fav=S.fav.includes(i)?S.fav.filter(x=>x!==i):[...S.fav,i];save();renderTips()};d.append(h);$("#tips").append(d)});
   $("#saved").textContent=`Salvas: ${S.fav.length} dicas`;
 }
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{if(location.hash.length>2)history.replaceState(null,"",location.pathname);$("#detalhe").classList.add("hide");
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
   ["agenda","rotina","dicas"].forEach(s=>$("#"+s).classList.toggle("hide",s!==b.dataset.t))});
-renderAgenda();renderTasks();renderTips();
+renderAgenda();renderTasks();renderTips();addEventListener("hashchange",route);route();
 </script>
 </body>
 </html>
